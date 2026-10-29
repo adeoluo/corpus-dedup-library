@@ -65,6 +65,27 @@ fraction of all pairs. Because the number of candidate pairs grows far more slow
 quadratic all-pairs count, the reduction **grows with corpus size**, from 77x at 90 documents to
 209x at 270.
 
+### Scale, throughput, and memory
+
+> Reproduce with `python -m corpus_dedup_library` then `uv run python benchmarks/scale.py`.
+> Synthetic corpora (two thirds unique, one third near-copies). Peak memory is measured with
+> `tracemalloc`.
+
+| Documents | Runtime | Throughput | Peak memory | Candidate pairs | Fewer than all-pairs | Precision | Recall |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| 1,050 | 3.6 s | ~288 docs/s | 8.1 MiB | 442 | 1,246x | 1.000 | 0.997 |
+| 3,000 | 10.5 s | ~285 docs/s | 22.9 MiB | 1,310 | 3,434x | 1.000 | 0.988 |
+| 6,000 | 21.1 s | ~284 docs/s | 45.7 MiB | 2,634 | 6,833x | 1.000 | 0.992 |
+| 10,500 | 37.5 s | ~280 docs/s | 80.4 MiB | 4,900 | 11,249x | 1.000 | 0.995 |
+
+Throughput holds roughly constant per document and memory grows linearly with corpus size, while
+the candidate-pair reduction keeps widening (over 11,000x at 10,500 documents). Adversarial duplicate
+shapes (exact, odd whitespace, repeated text, and near-copies with appended non-ASCII text) are
+detected; a low-overlap semantic paraphrase is **not** detected, which is the expected boundary of
+word-shingle MinHash (it measures lexical overlap, not meaning), not an implementation defect. These
+remain synthetic corpora: they measure throughput and memory behavior, not accuracy on real web text
+at pretraining scale.
+
 ## Demonstration
 
 ```text

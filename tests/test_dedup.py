@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from corpus_dedup_library.data import make_corpus
 from corpus_dedup_library.dedup import all_pairs_count, deduplicate
-from corpus_dedup_library.evaluation import evaluate_detection
+from corpus_dedup_library.evaluation import evaluate_detection, scale_report
 from corpus_dedup_library.lsh import LSHIndex, build_index
 from corpus_dedup_library.minhash import (
     MinHasher,
@@ -84,6 +84,53 @@ def test_detection_precision_and_recall_are_high() -> None:
     assert report.precision >= 0.95
     assert report.recall >= 0.95
     assert report.candidate_reduction > 10
+
+
+def test_detects_adversarial_duplicate_shapes() -> None:
+    # Exact, whitespace-variant, repeated-text, and accented-unicode duplicates
+    # of the same base document must land in one cluster; an unrelated document
+    # must not.
+    base = "the quarterly revenue report shows steady growth across every region this year"
+    documents = [
+        base,
+        base,  # exact duplicate
+        "  ".join(base.split()),  # collapsed/odd whitespace
+        base + " " + base,  # repeated text
+        base + " voir le résumé en français ci joint",  # near-copy with appended unicode clause
+        "an unrelated note about museum exhibit opening hours and ticket prices downtown",
+    ]
+    result = deduplicate(documents, threshold=0.5, k=2)
+    clusters = {tuple(c) for c in result.clusters}
+    # the near-duplicate variants of the base document collapse to a single kept id
+    assert 0 in result.keep
+    assert {1, 2, 3, 4}.issubset(set(result.drop))
+    # the unrelated document survives
+    assert 5 in result.keep
+    assert all(5 not in cluster for cluster in clusters)
+
+
+def test_low_overlap_paraphrase_is_not_detected() -> None:
+    # A semantic paraphrase with little word-shingle overlap is expected to be
+    # missed: word-shingle MinHash measures lexical overlap, not meaning. This
+    # documents the boundary rather than asserting a defect.
+    documents = [
+        "the company increased its quarterly revenue across all regions",
+        "earnings rose in every territory during the three month period",
+    ]
+    result = deduplicate(documents, threshold=0.6, k=2)
+    assert result.drop == []
+
+
+def test_scale_report_runs_and_measures() -> None:
+    report = scale_report(unique=300, duplicates=150)
+    assert report.documents == 450
+    assert report.seconds > 0.0
+    assert report.peak_mebibytes > 0.0
+    assert report.docs_per_second > 0.0
+    assert report.candidate_reduction > 10
+    assert report.precision >= 0.95
+    assert report.recall >= 0.95
+    assert "docs/s" in report.format()
 
 
 def test_quality_accepts_natural_prose() -> None:
