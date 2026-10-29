@@ -134,6 +134,19 @@ method and tables: [`docs/EVALUATION_REPORT.md`](docs/EVALUATION_REPORT.md).
 - **Data card:** [`docs/DATA_CARD.md`](docs/DATA_CARD.md)
 - **Threat model:** [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md)
 
+## Comparison scope
+
+The reported precision, recall, and candidate-pair reduction are measured on a small synthetic
+corpus (90 to 270 documents) with injected near-duplicates, against an exhaustive all-pairs
+baseline, not against an established deduplication pipeline at scale. Perfect accuracy on injected
+duplicates is not evidence of the same accuracy on diverse web text, and this corpus is far below
+pretraining scale. This project has **not** been benchmarked against
+[datatrove](https://github.com/huggingface/datatrove) or
+[text-dedup](https://github.com/ChenghaoMou/text-dedup), and it does not claim to beat them. What
+the result establishes is the correctness of the MinHash and LSH mechanics and the sublinear growth
+of candidate pairs. A large-scale evaluation with memory and throughput measurements is the natural
+next step.
+
 ## Limitations
 
 - Pure-Python hashing is slow per document; the win is algorithmic (far fewer comparisons), not raw
@@ -145,6 +158,7 @@ method and tables: [`docs/EVALUATION_REPORT.md`](docs/EVALUATION_REPORT.md).
 
 ## Roadmap
 
+- [ ] Evaluate on a real large corpus with memory and throughput measurements, compared against datatrove or text-dedup.
 - [ ] Add a streaming mode that indexes documents without holding them all in memory.
 - [ ] Add a learned quality classifier alongside the heuristics.
 - [ ] Add exact sub-document (span) overlap detection.
