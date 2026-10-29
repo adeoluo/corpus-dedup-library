@@ -1,0 +1,51 @@
+---
+title: System Architecture - Corpus Dedup Library
+config:
+  theme: base
+  themeVariables:
+    fontFamily: "Inter, system-ui, sans-serif"
+    primaryColor: "#F8FAFC"
+    primaryBorderColor: "#1E293B"
+    primaryTextColor: "#1E293B"
+    lineColor: "#64748B"
+    clusterBkg: "#EEF2FF"
+    clusterBorder: "#94A3B8"
+---
+flowchart TB
+    classDef edge     fill:#F59E0B,stroke:#1E293B,color:#1E293B,stroke-width:1px;
+    classDef core     fill:#6366F1,stroke:#1E293B,color:#ffffff,stroke-width:1px;
+    classDef data     fill:#10B981,stroke:#1E293B,color:#ffffff,stroke-width:1px;
+    classDef control  fill:#0EA5E9,stroke:#1E293B,color:#ffffff,stroke-width:1px;
+    classDef obs      fill:#CBD5E1,stroke:#1E293B,color:#1E293B,stroke-width:1px;
+
+    Client([Client]):::edge
+
+    subgraph Dedup["Near-deduplication pipeline"]
+        direction TB
+        Shingle["Shingle<br/>hashed word k-grams"]:::core
+        Sign["MinHash signatures<br/>min over hash permutations"]:::core
+        LSH["LSH banding<br/>shortlist candidate pairs"]:::core
+        Verify["Verify Jaccard threshold<br/>signature estimate or exact"]:::control
+        Cluster["Union-find clusters<br/>keep one representative"]:::core
+    end
+
+    subgraph Quality["Quality filtering"]
+        direction TB
+        Rules["Heuristic rules<br/>length | stopwords | symbols | repetition"]:::core
+    end
+
+    subgraph Edge["Service layer (stdlib HTTP)"]
+        direction TB
+        Router["Router<br/>/health | /ready | /metrics | /dedup | /quality | /report"]:::core
+        Validate["Validation<br/>bounded documents and threshold"]:::control
+    end
+
+    Result["Keep / drop ids + detection metrics"]:::obs
+
+    Shingle --> Sign --> LSH --> Verify --> Cluster
+    Client -->|documents| Router --> Validate
+    Validate -->|batch| Dedup
+    Validate -->|document| Rules
+    Cluster --> Result
+    Rules --> Result
+    Result --> Router -->|JSON response| Client
