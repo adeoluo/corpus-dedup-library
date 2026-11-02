@@ -151,6 +151,12 @@ print(assess("!!! @@@ ###").reasons)  # ('too_few_stopwords', 'too_many_symbols'
 
 ## Usage
 
+A real run of the Rust CLI on 24,000 synthetic documents with 4,000 planted near-copies. Regenerate with `vhs docs/demo/dedup.tape`.
+
+<p align="center">
+  <img src="docs/demo/dedup.gif" alt="corpus-dedup removing 4,000 planted near-duplicates from 24,000 documents" width="860">
+</p>
+
 ### Demonstration
 
 ```text
