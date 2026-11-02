@@ -12,12 +12,21 @@ A corpus near-deduplication and quality-filtering library built from scratch in 
 - `benchmarks/`: benchmark scripts and recorded results
 - `docker-compose.yml`: local container setup
 - `docs/`: documentation, architecture diagram source and render, design records
+- `rust/`: Rust core compiled into a Python extension with PyO3
+- `scripts/`: maintenance scripts (release, assets, data)
 - `src/`: library and service source
 - `tests/`: test suite
 
 Key modules:
 
+- `rust/src/bin/corpus-dedup.rs`: `corpus-dedup`: stream JSONL on stdin, write the deduplicated lines to stdout.
+- `rust/src/cluster.rs`: Union-find clustering of confirmed duplicate pairs; the lowest id in a cluster is kept.
+- `rust/src/lib.rs`: Rust core of corpus-dedup-library: MinHash signatures, LSH banding, and clustering.
+- `rust/src/lsh.rs`: LSH banding: documents sharing any band bucket become candidate pairs.
+- `rust/src/minhash.rs`: MinHash signatures over hashed word shingles.
+- `rust/src/python.rs`: PyO3 bindings, built by maturin into the `corpus_dedup_rs` extension module.
 - `src/corpus_dedup_library/__init__.py`: Corpus Dedup Library - MinHash and LSH near-deduplication from scratch.
+- `src/corpus_dedup_library/backend.py`: Optional Rust backend, used when the ``corpus_dedup_rs`` extension is installed.
 - `src/corpus_dedup_library/cli.py`: Command line interface for the corpus deduplication library.
 - `src/corpus_dedup_library/data.py`: A deterministic synthetic corpus with injected near-duplicates.
 - `src/corpus_dedup_library/dedup.py`: The near-deduplication pipeline: candidates, verification, and clustering.
