@@ -209,6 +209,16 @@ routing logic is a pure function, tested without a socket.
 | POST | `/quality` | body `{"text": str}`; whether the text passes and why not |
 | GET | `/report` | near-duplicate detection precision and recall on the built-in corpus |
 
+### Demos
+
+Recorded from real runs with [vhs](https://github.com/charmbracelet/vhs); each tape is in `docs/demo/`.
+
+Detection precision and recall on the labeled corpus, then the quality filter.
+
+<p align="center">
+  <img src="docs/demo/report.gif" alt="Detection precision and recall on the labeled corpus, then the quality filter" width="860">
+</p>
+
 ## Design decisions
 
 - **MinHash plus LSH over exact all-pairs** - exact pairwise Jaccard is quadratic; MinHash and LSH
