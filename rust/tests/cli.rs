@@ -51,3 +51,46 @@ fn custom_field_and_errors() {
     let bad_threshold = run(&["--threshold", "1.5"], "");
     assert_eq!(bad_threshold.status.code(), Some(2));
 }
+
+#[test]
+fn file_mode_matches_stdin_mode_and_preserves_bytes() {
+    let dir = std::env::temp_dir().join(format!("corpus-dedup-test-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let input = dir.join("in.jsonl");
+    let output = dir.join("out.jsonl");
+    let mut text = String::new();
+    for i in 0..50 {
+        text.push_str(&format!(
+            "{{\"id\": {i}, \"text\": \"shared words about topic {} plus filler words here\"}}\n",
+            i % 10
+        ));
+        if i % 7 == 0 {
+            text.push_str("\r\n");
+        }
+    }
+    text.push_str("{\"id\": 99, \"text\": \"caf\u{e9} na\u{ef}ve r\u{e9}sum\u{e9} unique line\"}");
+    std::fs::write(&input, &text).unwrap();
+    let stdin_out = run(&[], &text);
+    assert!(stdin_out.status.success());
+    let file_run = Command::new(env!("CARGO_BIN_EXE_corpus-dedup"))
+        .args([
+            "--input",
+            input.to_str().unwrap(),
+            "--output",
+            output.to_str().unwrap(),
+        ])
+        .output()
+        .unwrap();
+    assert!(
+        file_run.status.success(),
+        "{}",
+        String::from_utf8_lossy(&file_run.stderr)
+    );
+    let from_file = std::fs::read_to_string(&output).unwrap();
+    assert_eq!(from_file, String::from_utf8(stdin_out.stdout).unwrap());
+    // The 50 templated lines differ by one digit, so they collapse to a few clusters.
+    let kept = from_file.lines().count();
+    assert!(kept > 1 && kept < 51, "kept {kept}");
+    assert!(from_file.ends_with("unique line\"}\n"));
+    std::fs::remove_dir_all(&dir).unwrap();
+}

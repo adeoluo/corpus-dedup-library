@@ -94,6 +94,40 @@ word-shingle MinHash (it measures lexical overlap, not meaning), not an implemen
 remain synthetic corpora: they measure throughput and memory behavior, not accuracy on real web text
 at pretraining scale.
 
+### Real web text at scale (C4)
+
+> Reproduce: download C4 English shards from
+> `https://huggingface.co/datasets/allenai/c4/resolve/main/en/c4-train.0000N-of-01024.json.gz`,
+> then `corpus-dedup --input c4.jsonl --output deduped.jsonl` and
+> `uv run --no-sync --with datasketch python benchmarks/compare_datasketch.py --c4 <shard>`.
+> Apple M1, 8 cores.
+
+**1.4 million documents.** The command-line tool deduplicates the first four C4 shards,
+1,425,269 real web documents (3.3 GB of JSONL), in **30.5 seconds** with a peak memory of
+1.2 GB. It drops 48,572 near-duplicates (3.4%) in 10,137 clusters after checking 4.6 million
+candidate pairs. With `--input`, only signatures and byte offsets are held in memory and the
+kept lines are copied from the file in a second pass, so memory grows with the number of
+documents, not their length.
+
+**Against datasketch**, the most widely used Python MinHash LSH library, on the first
+50,000 C4 documents (threshold 0.6, 64 permutations, word bigrams).
+Every pair either library reports is checked with the exact Jaccard similarity; recall is
+measured against the 4,082 truly similar pairs that any of the runs found.
+
+| Library | Time | Documents per second | Pairs reported | Precision | Recall |
+|---|---:|---:|---:|---:|---:|
+| corpus-dedup-library (Rust backend) | 0.9 s | 52,663 | 3,824 | 0.876 | 0.821 |
+| **corpus-dedup-library (Rust backend, exact=True)** | 2.3 s | 21,676 | 4,044 | 1.000 | 0.991 |
+| datasketch MinHashLSH | 14.8 s | 3,383 | 2,662 | 0.974 | 0.635 |
+
+The default mode confirms candidates with the MinHash estimate, which is fastest but lets
+some false pairs through (precision 0.876). `exact=True` confirms each candidate with the
+exact Jaccard similarity: **precision 1.000 and recall 0.991, 6x faster than datasketch**,
+which reports fewer pairs (higher precision than the estimate mode, but recall 0.635 because
+its banding is tuned more conservatively). On 10,000 documents the
+Rust backend is 215x faster than this library's own Python
+backend.
+
 ### Rust core
 
 > Reproduce with `make rust-develop bench-compare`. Synthetic corpora of 80 to 200 word documents

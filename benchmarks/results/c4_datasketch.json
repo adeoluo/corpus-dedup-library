@@ -1,0 +1,37 @@
+{
+  "documents": 50000,
+  "threshold": 0.6,
+  "true_pairs_found": 4082,
+  "rows": [
+    {
+      "library": "corpus-dedup-library (Rust backend)",
+      "seconds": 0.9494332080003005,
+      "docs_per_s": 52662.99891206688,
+      "pairs": 3824,
+      "precision": 0.8763075313807531,
+      "recall": 0.820921117099461
+    },
+    {
+      "library": "corpus-dedup-library (Rust backend, exact=True)",
+      "seconds": 2.306728708999799,
+      "docs_per_s": 21675.71756701293,
+      "pairs": 4044,
+      "precision": 1.0,
+      "recall": 0.9906908378245958
+    },
+    {
+      "library": "datasketch MinHashLSH",
+      "seconds": 14.778450709000026,
+      "docs_per_s": 3383.3045820933157,
+      "pairs": 2662,
+      "precision": 0.9744552967693464,
+      "recall": 0.6354728074473297
+    }
+  ],
+  "python_backend": {
+    "documents": 10000,
+    "python_s": 38.49017145900052,
+    "rust_s": 0.17910241699973994,
+    "speedup": 214.9059298236964
+  }
+}
