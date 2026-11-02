@@ -31,3 +31,11 @@ Port shingling, MinHash, LSH banding, and union-find clustering to a Rust crate 
 * Two implementations must stay in step. `tests/test_rust_parity.py` compares them in CI
   with the extension required, so any divergence fails the build.
 * Installing the Rust backend needs a Rust toolchain; the pure Python install is unchanged.
+
+## Update: the Rust core is the default, including exact verification
+
+The package now builds with maturin, so every install compiles the Rust core into it and
+`backend="auto"` always finds it. `exact=True` also runs in Rust: shingle sets are built in
+parallel for the documents that appear in a candidate pair, and each pair's exact Jaccard is
+computed by merging the two sorted sets. It returns the same result as the Python path, which
+the parity tests check, and costs about the same time as the estimate mode.

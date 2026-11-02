@@ -1,7 +1,7 @@
 """Throughput of the Python and Rust backends on the same synthetic corpus.
 
 Builds a corpus with planted near-duplicates, checks that both backends return the
-same result, and prints documents per second for each. Requires `make rust-develop`.
+same result, and prints documents per second for each.
 """
 
 from __future__ import annotations
@@ -35,7 +35,7 @@ def timed(docs: list[str], backend: str) -> tuple[float, object]:
 
 def main() -> None:
     if not rust_available():
-        raise SystemExit("build the extension first: make rust-develop")
+        raise SystemExit("build the Rust core first: uv sync (or make rust-develop)")
     print(f"cpus={os.cpu_count()}")
     print("| documents | python s | rust s | speedup | identical |")
     print("|---:|---:|---:|---:|:---:|")
