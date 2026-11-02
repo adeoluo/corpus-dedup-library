@@ -2,7 +2,7 @@
 
 ## Overview
 - **What it is:** a from-scratch near-deduplication and quality-filtering library using MinHash and
-  LSH, in pure Python with no third-party dependencies.
+  LSH, with the hashing and banding implemented directly in the package.
 - **Base model:** none. It is an algorithmic data-cleaning pipeline.
 - **Version and date:** 0.1.0, 2026.
 
@@ -12,7 +12,7 @@
 - **Primary users:** engineers building training-data pipelines.
 
 ## Out-of-scope / prohibited use
-- Not an optimized production deduplicator; pure-Python hashing is slow per document.
+- Not an optimized production deduplicator; hashing in interpreted Python is slow per document.
 - The quality filters are heuristic and language-agnostic; they do not replace model-based filters.
 
 ## Performance

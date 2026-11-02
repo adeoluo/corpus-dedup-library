@@ -1,7 +1,7 @@
 [project]
 name = "corpus-dedup-library"
 version = "0.1.0"
-description = "A corpus near-deduplication and quality-filtering library built from scratch in pure Python, using MinHash and LSH"
+description = "A corpus near-deduplication and quality-filtering library built from scratch in Python, using MinHash and LSH"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
