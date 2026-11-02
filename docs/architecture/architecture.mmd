@@ -1,38 +1,63 @@
-flowchart TD
+flowchart LR
     classDef edge     fill:#F59E0B,stroke:#1E293B,color:#1E293B,stroke-width:1px;
     classDef core     fill:#6366F1,stroke:#1E293B,color:#ffffff,stroke-width:1px;
     classDef data     fill:#10B981,stroke:#1E293B,color:#ffffff,stroke-width:1px;
     classDef control  fill:#0EA5E9,stroke:#1E293B,color:#ffffff,stroke-width:1px;
     classDef obs      fill:#CBD5E1,stroke:#1E293B,color:#1E293B,stroke-width:1px;
 
-    Client([Client]):::edge
+    Client(["HTTP client"]):::edge
+    CLI(["CLI<br/>dedup, quality, report, serve"]):::edge
+
+    subgraph Interfaces["Interfaces (stdlib HTTP, no stored corpus)"]
+        direction TB
+        Router["Router<br/>/dedup, /quality, /report, /metrics"]:::edge
+        Validate["Validation<br/>bounded document count and size,<br/>threshold range"]:::control
+    end
 
     subgraph Dedup["Near-deduplication pipeline"]
         direction TB
-        Shingle["Shingle<br/>hashed word k-grams"]:::core
-        Sign["MinHash signatures<br/>min over hash permutations"]:::core
-        LSH["LSH banding<br/>shortlist candidate pairs"]:::core
+        Sign["Shingle + MinHash<br/>hashed word k-grams,<br/>(a*h + b) mod p permutations"]:::core
+        LSH["LSH banding<br/>16 bands x 4 rows,<br/>shortlist candidate pairs"]:::core
         Verify["Verify Jaccard threshold<br/>signature estimate or exact"]:::control
-        Cluster["Union-find clusters<br/>keep one representative"]:::core
+        Cluster["Union-find clusters<br/>keep lowest id per cluster"]:::core
     end
 
     subgraph Quality["Quality filtering"]
         direction TB
-        Rules["Heuristic rules<br/>length | stopwords | symbols | repetition"]:::core
+        Rules["Heuristic rules<br/>length, word length, stopwords,<br/>symbols, repetition"]:::control
+        QConfig["QualityConfig<br/>rule thresholds"]:::control
     end
 
-    subgraph Edge["Service layer (stdlib HTTP)"]
+    subgraph State["Data and state (in memory)"]
         direction TB
-        Router["Router<br/>/health | /ready | /metrics | /dedup | /quality | /report"]:::core
-        Validate["Validation<br/>bounded documents and threshold"]:::control
+        Corpus[("Synthetic corpus<br/>near-duplicates + ground truth")]:::data
+        Signatures[("Signatures<br/>per document")]:::data
+        Buckets[("Band buckets<br/>hash of each band")]:::data
     end
 
-    Result["Keep / drop ids + detection metrics"]:::obs
+    subgraph Evaluation["Evaluation and outputs"]
+        direction TB
+        Result["DedupResult<br/>keep, drop, duplicate pairs"]:::obs
+        QReport["QualityReport<br/>passed + reasons"]:::obs
+        Detect["DetectionReport<br/>precision, recall, pair reduction"]:::obs
+        Metrics["ServiceMetrics<br/>Prometheus"]:::obs
+    end
 
-    Shingle --> Sign --> LSH --> Verify --> Cluster
-    Client -->|documents| Router --> Validate
-    Validate -->|batch| Dedup
+    Client -->|documents| Router
+    CLI -->|serve| Router
+    CLI -->|dedup, report| Sign
+    CLI -->|quality| Rules
+    Router --> Validate
+    Validate -->|batch| Sign
     Validate -->|document| Rules
+    Sign -->|signatures| LSH
+    LSH -->|candidate pairs| Verify
+    Verify -->|confirmed pairs| Cluster
+    Sign -.-> Signatures
+    LSH -.-> Buckets
+    QConfig -.-> Rules
     Cluster --> Result
-    Rules --> Result
-    Result --> Router -->|JSON response| Client
+    Rules --> QReport
+    Result -->|vs ground truth| Detect
+    Detect -.->|reads| Corpus
+    Router -.-> Metrics

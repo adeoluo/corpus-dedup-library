@@ -33,10 +33,16 @@ grows with corpus size.
   <img src="docs/architecture/architecture.svg" alt="Architecture diagram" width="860">
 </p>
 
+<sub>Legend: amber = entry points and external systems, indigo = core logic, green = data and state, blue = validation and control, grey = observability and outputs.</sub>
+
 Each document is shingled into hashed word k-grams; MinHash reduces the shingle set to a compact
 signature; LSH bands the signatures and buckets them so that similar documents collide; candidate
 pairs are verified against a Jaccard threshold; and a union-find groups confirmed duplicates so one
-representative per cluster is kept. See the [ADRs](docs/adr/) for the key decisions.
+representative per cluster is kept. Quality filtering runs separately, applying configurable
+heuristic rules to each document and returning the reasons it failed. The HTTP service validates
+batch and document sizes, keeps no corpus between requests, and exposes Prometheus metrics; the
+report scores detection precision and recall against a synthetic corpus with known duplicates.
+See the [ADRs](docs/adr/) for the key decisions.
 
 ### What it implements
 
