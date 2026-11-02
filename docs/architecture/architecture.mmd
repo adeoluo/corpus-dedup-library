@@ -5,59 +5,42 @@ flowchart LR
     classDef control  fill:#0EA5E9,stroke:#1E293B,color:#ffffff,stroke-width:1px;
     classDef obs      fill:#CBD5E1,stroke:#1E293B,color:#1E293B,stroke-width:1px;
 
-    Client(["HTTP client"]):::edge
-    CLI(["CLI<br/>dedup, quality, report, serve"]):::edge
-
-    subgraph Interfaces["Interfaces (stdlib HTTP, no stored corpus)"]
+    subgraph Interfaces["Interfaces (no stored corpus)"]
         direction TB
-        Router["Router<br/>/dedup, /quality, /report, /metrics"]:::edge
-        Validate["Validation<br/>bounded document count and size,<br/>threshold range"]:::control
+        Client([HTTP client]):::edge
+        CLI(["CLI<br/>dedup, quality, report"]):::edge
+        Router["Router<br/>/dedup, /quality"]:::edge
+        Validate["Validation<br/>doc count and size"]:::control
+        CLI ~~~ Client --> Router --> Validate
     end
 
-    subgraph Dedup["Near-deduplication pipeline"]
+    subgraph Core["Dedup and quality"]
         direction TB
-        Sign["Shingle + MinHash<br/>hashed word k-grams,<br/>(a*h + b) mod p permutations"]:::core
-        LSH["LSH banding<br/>16 bands x 4 rows,<br/>shortlist candidate pairs"]:::core
-        Verify["Verify Jaccard threshold<br/>signature estimate or exact"]:::control
-        Cluster["Union-find clusters<br/>keep lowest id per cluster"]:::core
+        Sign["Shingle + MinHash<br/>hashed word k-grams"]:::core
+        LSH["LSH banding<br/>16 bands x 4 rows"]:::core
+        Verify["Jaccard threshold<br/>estimate or exact"]:::control
+        Cluster["Union-find<br/>keep lowest id"]:::core
+        Rules["Quality rules<br/>length, symbols, repeats"]:::control
+        Sign --> LSH --> Verify --> Cluster ~~~ Rules
     end
 
-    subgraph Quality["Quality filtering"]
+    subgraph State["Data and state"]
         direction TB
-        Rules["Heuristic rules<br/>length, word length, stopwords,<br/>symbols, repetition"]:::control
-        QConfig["QualityConfig<br/>rule thresholds"]:::control
-    end
-
-    subgraph State["Data and state (in memory)"]
-        direction TB
-        Corpus[("Synthetic corpus<br/>near-duplicates + ground truth")]:::data
         Signatures[("Signatures<br/>per document")]:::data
-        Buckets[("Band buckets<br/>hash of each band")]:::data
+        Buckets[("Band buckets<br/>hash per band")]:::data
+        Corpus[("Synthetic corpus<br/>known duplicates")]:::data
+        Signatures ~~~ Buckets ~~~ Corpus
     end
 
-    subgraph Evaluation["Evaluation and outputs"]
+    subgraph Obs["Evaluation and outputs"]
         direction TB
-        Result["DedupResult<br/>keep, drop, duplicate pairs"]:::obs
+        Result["DedupResult<br/>keep, drop, pairs"]:::obs
         QReport["QualityReport<br/>passed + reasons"]:::obs
-        Detect["DetectionReport<br/>precision, recall, pair reduction"]:::obs
+        Detect["DetectionReport<br/>precision, recall"]:::obs
         Metrics["ServiceMetrics<br/>Prometheus"]:::obs
+        Result ~~~ QReport ~~~ Detect ~~~ Metrics
     end
 
-    Client -->|documents| Router
-    CLI -->|serve| Router
-    CLI -->|dedup, report| Sign
-    CLI -->|quality| Rules
-    Router --> Validate
-    Validate -->|batch| Sign
-    Validate -->|document| Rules
-    Sign -->|signatures| LSH
-    LSH -->|candidate pairs| Verify
-    Verify -->|confirmed pairs| Cluster
-    Sign -.-> Signatures
-    LSH -.-> Buckets
-    QConfig -.-> Rules
-    Cluster --> Result
-    Rules --> QReport
-    Result -->|vs ground truth| Detect
-    Detect -.->|reads| Corpus
-    Router -.-> Metrics
+    Interfaces -->|documents| Core
+    Core -.->|signatures, buckets| State
+    Core -->|keep, drop, reasons| Obs
