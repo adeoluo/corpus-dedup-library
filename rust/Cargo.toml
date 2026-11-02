@@ -1,0 +1,32 @@
+[package]
+name = "corpus-dedup-rs"
+version = "0.1.0"
+edition = "2021"
+description = "Rust core of corpus-dedup-library: MinHash signatures, LSH banding, and clustering, bit-exact with the Python implementation"
+license = "MIT"
+authors = ["Adeolu Ogunnoiki"]
+repository = "https://github.com/adeoluo/corpus-dedup-library"
+publish = false
+
+[lib]
+name = "corpus_dedup_rs"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "corpus-dedup"
+path = "src/bin/corpus-dedup.rs"
+
+[features]
+default = []
+# Enabled by maturin (see pyproject.toml). Plain `cargo test` builds the Rust core
+# and the CLI without linking against Python.
+python = ["dep:pyo3"]
+
+[dependencies]
+pyo3 = { version = "0.30", optional = true, features = ["abi3-py311"] }
+rayon = "1.10"
+serde_json = "1"
+
+[profile.release]
+lto = true
+codegen-units = 1
