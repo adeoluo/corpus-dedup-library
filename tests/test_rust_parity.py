@@ -84,11 +84,13 @@ def test_deduplicate_results_match(threshold: float) -> None:
     assert python.drop  # the corpus really contains near-duplicates
 
 
-def test_exact_mode_uses_rust_signatures_with_python_verification() -> None:
-    texts = random_texts(120, seed=3)
-    assert deduplicate(texts, exact=True, backend="rust") == deduplicate(
-        texts, exact=True, backend="python"
-    )
+@pytest.mark.parametrize("threshold", [0.5, 0.8])
+def test_exact_mode_matches_python(threshold: float) -> None:
+    texts = ADVERSARIAL + random_texts(300, seed=3) + ["", "   ", "one", "one two"]
+    python = deduplicate(texts, threshold=threshold, exact=True, backend="python")
+    rust = deduplicate(texts, threshold=threshold, exact=True, backend="rust")
+    assert rust == python
+    assert python.drop
 
 
 def test_auto_prefers_rust() -> None:
