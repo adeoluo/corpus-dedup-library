@@ -1,0 +1,34 @@
+# Corpus Dedup Library
+
+> A corpus near-deduplication and quality-filtering library built from scratch in Python with a bit-exact Rust core, using MinHash and locality-sensitive hashing, scored for precision, recall, and the fraction of document pairs compared.
+
+Languages: Python, Rust. License: MIT. Source: https://github.com/adeoluo/corpus-dedup-library
+
+## Docs
+
+- [README](https://github.com/adeoluo/corpus-dedup-library/blob/main/README.md): motivation, architecture, results, quickstart, usage, design decisions, testing, responsible ai, limitations, roadmap
+- [AGENTS.md](https://github.com/adeoluo/corpus-dedup-library/blob/main/AGENTS.md): layout, commands and conventions for changing the code
+- [Architecture diagram](https://github.com/adeoluo/corpus-dedup-library/blob/main/docs/architecture/architecture.mmd): Mermaid source of the component diagram
+- [Data Card - Corpus Dedup Library](https://github.com/adeoluo/corpus-dedup-library/blob/main/docs/DATA_CARD.md)
+- [Definition of Done](https://github.com/adeoluo/corpus-dedup-library/blob/main/docs/DEFINITION_OF_DONE.md)
+- [Evaluation Report - Corpus Dedup Library](https://github.com/adeoluo/corpus-dedup-library/blob/main/docs/EVALUATION_REPORT.md)
+- [Model / System Card - Corpus Dedup Library](https://github.com/adeoluo/corpus-dedup-library/blob/main/docs/MODEL_CARD.md)
+- [Threat Model - Corpus Dedup Library](https://github.com/adeoluo/corpus-dedup-library/blob/main/docs/THREAT_MODEL.md)
+- [ADR-0001: Record architecture decisions](https://github.com/adeoluo/corpus-dedup-library/blob/main/docs/adr/0001-record-architecture-decisions.md)
+- [ADR-0002: MinHash and LSH for scalable near-deduplication](https://github.com/adeoluo/corpus-dedup-library/blob/main/docs/adr/0002-minhash-lsh.md)
+- [ADR-0003: Verify LSH candidates against a threshold](https://github.com/adeoluo/corpus-dedup-library/blob/main/docs/adr/0003-verify-candidates.md)
+- [ADR-NNNN: <short title>](https://github.com/adeoluo/corpus-dedup-library/blob/main/docs/adr/template.md)
+- [Changelog](https://github.com/adeoluo/corpus-dedup-library/blob/main/CHANGELOG.md): release history
+
+## Source
+
+- [src/corpus_dedup_library/__init__.py](https://github.com/adeoluo/corpus-dedup-library/blob/main/src/corpus_dedup_library/__init__.py): Corpus Dedup Library - MinHash and LSH near-deduplication from scratch.
+- [src/corpus_dedup_library/cli.py](https://github.com/adeoluo/corpus-dedup-library/blob/main/src/corpus_dedup_library/cli.py): Command line interface for the corpus deduplication library.
+- [src/corpus_dedup_library/data.py](https://github.com/adeoluo/corpus-dedup-library/blob/main/src/corpus_dedup_library/data.py): A deterministic synthetic corpus with injected near-duplicates.
+- [src/corpus_dedup_library/dedup.py](https://github.com/adeoluo/corpus-dedup-library/blob/main/src/corpus_dedup_library/dedup.py): The near-deduplication pipeline: candidates, verification, and clustering.
+- [src/corpus_dedup_library/evaluation.py](https://github.com/adeoluo/corpus-dedup-library/blob/main/src/corpus_dedup_library/evaluation.py): Evaluation: near-duplicate detection quality and candidate-pair reduction.
+- [src/corpus_dedup_library/lsh.py](https://github.com/adeoluo/corpus-dedup-library/blob/main/src/corpus_dedup_library/lsh.py): Locality-sensitive hashing over MinHash signatures.
+- [src/corpus_dedup_library/minhash.py](https://github.com/adeoluo/corpus-dedup-library/blob/main/src/corpus_dedup_library/minhash.py): MinHash signatures over shingled text.
+- [src/corpus_dedup_library/observability.py](https://github.com/adeoluo/corpus-dedup-library/blob/main/src/corpus_dedup_library/observability.py): In-process request metrics for the HTTP service (Prometheus text exposition).
+- [src/corpus_dedup_library/quality.py](https://github.com/adeoluo/corpus-dedup-library/blob/main/src/corpus_dedup_library/quality.py): Heuristic quality filtering, in the spirit of large-corpus cleaning pipelines.
+- [src/corpus_dedup_library/service.py](https://github.com/adeoluo/corpus-dedup-library/blob/main/src/corpus_dedup_library/service.py): A standard-library HTTP service for near-deduplication and quality filtering.
