@@ -1,13 +1,14 @@
 <h1 align="center">Corpus Dedup Library</h1>
 
 <p align="center">
-  <em>A corpus near-deduplication and quality-filtering library built from scratch in Python with MinHash and locality-sensitive hashing, scored for precision, recall, and the fraction of document pairs compared.</em>
+  <em>A corpus near-deduplication and quality-filtering library built from scratch in Python with a bit-exact Rust core, using MinHash and locality-sensitive hashing, scored for precision, recall, and the fraction of document pairs compared.</em>
 </p>
 
 <p align="center">
   <a href="https://github.com/adeoluo/corpus-dedup-library/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/adeoluo/corpus-dedup-library/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/adeoluo/corpus-dedup-library/releases"><img alt="Release" src="https://img.shields.io/github/v/release/adeoluo/corpus-dedup-library"></a>
   <img alt="Python" src="https://img.shields.io/badge/python-3.11%20%7C%203.12-blue">
+  <img alt="Rust" src="https://img.shields.io/badge/rust-core%20%2B%20CLI-B7410E">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green"></a>
 </p>
 
@@ -51,6 +52,9 @@ See the [ADRs](docs/adr/) for the key decisions.
 - **LSH banding** with tunable bands and rows to set the similarity threshold for collision.
 - **A deduplication pipeline**: candidate generation, threshold verification (estimated or exact),
   union-find clustering, and representative selection.
+- **A Rust core** (`rust/`): the same MinHash, LSH banding, and clustering, bit-exact with the
+  Python reference, computing signatures in parallel with the GIL released. It is exposed to
+  Python as an optional backend and as a standalone `corpus-dedup` command for JSONL streams.
 - **Heuristic quality filters**: length, mean word length, stop-word ratio, symbol ratio, and word
   repetition, each an inspectable rule.
 
@@ -89,6 +93,22 @@ detected; a low-overlap semantic paraphrase is **not** detected, which is the ex
 word-shingle MinHash (it measures lexical overlap, not meaning), not an implementation defect. These
 remain synthetic corpora: they measure throughput and memory behavior, not accuracy on real web text
 at pretraining scale.
+
+### Rust core
+
+> Reproduce with `make rust-develop bench-compare`. Synthetic corpora of 80 to 200 word documents
+> with one planted near-copy per five documents; default settings (16 bands of 4 rows, k=2,
+> threshold 0.6); Apple M1, 8 cores.
+
+| Documents | Python | Rust | Speedup | Identical result |
+|---:|---:|---:|---:|:---:|
+| 1,200 | 2.07 s | 0.014 s | 149x | yes |
+| 6,000 | 10.27 s | 0.059 s | 175x | yes |
+| 24,000 | 41.27 s | 0.260 s | 159x | yes |
+
+The Python implementation stays the reference. The Rust backend returns the same
+`DedupResult` (kept and dropped ids, confirmed pairs, clusters), which the parity tests check
+on random and adversarial Unicode text, including Python's whitespace and lowercasing rules.
 
 ### Evaluation
 
@@ -146,6 +166,27 @@ Quality filter over 93 documents:
   doc 92: too_repetitive
 ```
 
+### Rust backend and CLI
+
+```bash
+make rust-develop                      # build the extension into .venv (needs a Rust toolchain)
+```
+
+```python
+from corpus_dedup_library.dedup import deduplicate
+
+result = deduplicate(documents, backend="auto")  # "rust" when installed, else "python"
+```
+
+The same core ships as a command that streams JSONL, keeps the first line of each
+near-duplicate cluster in input order, and writes a summary to stderr:
+
+```text
+$ cargo build --release --manifest-path rust/Cargo.toml
+$ rust/target/release/corpus-dedup --threshold 0.6 < corpus.jsonl > deduped.jsonl
+documents=2400 kept=2000 dropped=400 clusters=400 candidate_pairs=400 seconds=0.030
+```
+
 ### HTTP service
 
 A standard-library HTTP service holds no corpus state; each request carries its own documents. The
@@ -167,6 +208,9 @@ routing logic is a pure function, tested without a socket.
   [ADR 0002](docs/adr/0002-minhash-lsh.md).
 - **A verification step after LSH** - LSH produces candidates, not decisions; verifying each against
   a threshold controls precision. See [ADR 0003](docs/adr/0003-verify-candidates.md).
+- **A Rust core that is bit-exact with Python** - the hashing is CPU bound and embarrassingly
+  parallel, so it moves to Rust, but the Python code stays the specification and parity tests
+  compare the two on every CI run. See [ADR 0004](docs/adr/0004-rust-core-with-parity.md).
 
 ## Testing
 
@@ -182,12 +226,20 @@ The suite in `tests/` uses deterministic hashing and synthetic corpora:
   exact modes agree), detection precision and recall, adversarial duplicate shapes, the
   documented boundary that a low-overlap paraphrase is not detected, the scale report, and
   the quality filters (natural prose accepted, degenerate text rejected, tunable config).
+- `test_rust_parity.py`: the Rust signatures, candidate pairs, and full `deduplicate` results
+  equal Python's across shingle sizes, seeds, band layouts, thresholds, and adversarial Unicode
+  (final sigma, dotted capital I, U+001C to U+001F separators, emoji). `test_backend.py`
+  covers backend selection with and without the extension.
+- `rust/`: unit tests for hashing, shingling, banding, and clustering, plus end-to-end tests
+  of the `corpus-dedup` binary (`cargo test`).
 - `test_service_cli.py`: the HTTP handler layer (`/health`, `/ready`, `/dedup`, `/quality`,
   `/report`, `/metrics`, validation, unknown routes) and the CLI commands.
 
 CI (`.github/workflows/ci.yml`) runs `ruff format --check`, `ruff check`, `mypy src`, and
 `pytest` with an 80% coverage gate on Python 3.11 and 3.12, then builds the package and the
-Docker image.
+Docker image. A separate job runs `cargo fmt`, `clippy` (with and without the Python feature),
+`cargo test`, builds the extension with maturin, and runs the parity tests with the extension
+required.
 
 ## Responsible AI
 
@@ -197,8 +249,9 @@ Docker image.
 
 ## Limitations
 
-- Hashing in interpreted Python is slow per document; the win is algorithmic (far fewer comparisons), not raw
-  speed. An optimized hash would lower absolute latency.
+- The Python backend hashes at roughly 280 documents per second; use the Rust backend for
+  volume. Both hold all signatures in memory, so corpus size is bounded by RAM.
+- The `exact` verification mode uses Rust signatures but verifies candidates in Python.
 - Bands, rows, and the threshold set the operating point; the defaults suit the bundled corpus and
   may need tuning for other similarity distributions.
 - The quality filters are heuristic and language-agnostic by design; a production pipeline would add

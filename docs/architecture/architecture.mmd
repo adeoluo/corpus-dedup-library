@@ -24,6 +24,13 @@ flowchart LR
         Sign --> LSH --> Verify --> Cluster ~~~ Rules
     end
 
+    subgraph Rust["Rust core (bit-exact)"]
+        direction TB
+        RustCore[["corpus_dedup_rs<br/>rayon, GIL released"]]:::core
+        RustCLI(["corpus-dedup CLI<br/>JSONL stream"]):::edge
+        RustCore ~~~ RustCLI
+    end
+
     subgraph State["Data and state"]
         direction TB
         Signatures[("Signatures<br/>per document")]:::data
@@ -42,5 +49,7 @@ flowchart LR
     end
 
     Interfaces -->|documents| Core
+    Interfaces -->|backend=rust| Rust
     Core -.->|signatures, buckets| State
+    Rust -.->|same signatures| State
     Core -->|keep, drop, reasons| Obs
