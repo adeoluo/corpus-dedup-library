@@ -219,6 +219,12 @@ Detection precision and recall on the labeled corpus, then the quality filter.
   <img src="docs/demo/report.gif" alt="Detection precision and recall on the labeled corpus, then the quality filter" width="860">
 </p>
 
+The HTTP service deduplicating three documents, then the quality filter.
+
+<p align="center">
+  <img src="docs/demo/http.gif" alt="The HTTP service deduplicating three documents, then the quality filter" width="860">
+</p>
+
 ## Design decisions
 
 - **MinHash plus LSH over exact all-pairs** - exact pairwise Jaccard is quadratic; MinHash and LSH
