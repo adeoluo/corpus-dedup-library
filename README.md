@@ -189,7 +189,8 @@ near-duplicate cluster in input order, and writes a summary to stderr. Install i
 Homebrew (built from the tagged source) or build it from this repository:
 
 ```text
-$ brew install adeoluo/tap/corpus-dedup      # or: cargo build --release --manifest-path rust/Cargo.toml
+$ brew install adeoluo/tap/corpus-dedup
+$ curl -fsSL https://raw.githubusercontent.com/adeoluo/corpus-dedup-library/main/scripts/install.sh | sh   # prebuilt, checksum verified
 $ corpus-dedup --threshold 0.6 < corpus.jsonl > deduped.jsonl
 documents=2400 kept=2000 dropped=400 clusters=400 candidate_pairs=400 seconds=0.030
 ```
