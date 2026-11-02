@@ -11,7 +11,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from corpus_dedup_library.lsh import build_index
+from corpus_dedup_library.backend import extension, resolve_backend
+from corpus_dedup_library.lsh import LSHIndex
 from corpus_dedup_library.minhash import MinHasher, estimated_jaccard, exact_jaccard
 
 
@@ -57,17 +58,42 @@ def deduplicate(
     k: int = 2,
     seed: int = 0,
     exact: bool = False,
+    backend: str = "auto",
 ) -> DedupResult:
     """Remove near-duplicates above ``threshold`` Jaccard similarity.
 
     With ``exact`` set, candidate pairs are verified by exact Jaccard over shingle
     sets; otherwise the faster signature estimate is used. The lowest document id
     in each duplicate cluster is kept.
+
+    ``backend`` selects the implementation: ``"python"``, ``"rust"`` (the optional
+    ``corpus_dedup_rs`` extension), or ``"auto"`` (Rust when installed). Both produce
+    identical results.
     """
 
-    index, hasher = build_index(documents, bands=bands, rows=rows, k=k, seed=seed)
-    signatures = [hasher.signature(text) for text in documents]
-    candidates = index.candidate_pairs()
+    chosen = resolve_backend(backend)
+    if chosen == "rust" and not exact:
+        rust = extension()
+        signatures = rust.signatures(documents, bands * rows, k, seed)
+        pairs = rust.candidate_pairs(signatures, bands, rows)
+        kept, dropped, confirmed_pairs, clusters_found = rust.cluster(signatures, pairs, threshold)
+        return DedupResult(
+            keep=list(kept),
+            drop=list(dropped),
+            duplicate_pairs=[tuple(p) for p in confirmed_pairs],
+            candidate_pairs=len(pairs),
+            clusters=[list(c) for c in clusters_found],
+        )
+    if chosen == "rust":
+        signatures = extension().signatures(documents, bands * rows, k, seed)
+        candidates = set(map(tuple, extension().candidate_pairs(signatures, bands, rows)))
+    else:
+        hasher = MinHasher(num_perm=bands * rows, k=k, seed=seed)
+        signatures = [hasher.signature(text) for text in documents]
+        index = LSHIndex(bands=bands, rows=rows)
+        for doc_id, signature in enumerate(signatures):
+            index.add(doc_id, signature)
+        candidates = index.candidate_pairs()
     union = _UnionFind(len(documents))
     confirmed: list[tuple[int, int]] = []
     for a, b in candidates:
