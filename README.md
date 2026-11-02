@@ -185,11 +185,12 @@ result = deduplicate(documents, backend="auto")  # "rust" when installed, else "
 ```
 
 The same core ships as a command that streams JSONL, keeps the first line of each
-near-duplicate cluster in input order, and writes a summary to stderr:
+near-duplicate cluster in input order, and writes a summary to stderr. Install it with
+Homebrew (built from the tagged source) or build it from this repository:
 
 ```text
-$ cargo build --release --manifest-path rust/Cargo.toml
-$ rust/target/release/corpus-dedup --threshold 0.6 < corpus.jsonl > deduped.jsonl
+$ brew install adeoluo/tap/corpus-dedup      # or: cargo build --release --manifest-path rust/Cargo.toml
+$ corpus-dedup --threshold 0.6 < corpus.jsonl > deduped.jsonl
 documents=2400 kept=2000 dropped=400 clusters=400 candidate_pairs=400 seconds=0.030
 ```
 
