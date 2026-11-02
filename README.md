@@ -1,16 +1,14 @@
 <h1 align="center">Corpus Dedup Library</h1>
 
 <p align="center">
-  <em>A corpus near-deduplication and quality-filtering library built from scratch in pure Python, using MinHash and locality-sensitive hashing. It finds near-duplicates with high precision and recall while comparing a tiny fraction of all document pairs.</em>
+  <em>A corpus near-deduplication and quality-filtering library built from scratch in Python with MinHash and locality-sensitive hashing, scored for precision, recall, and the fraction of document pairs compared.</em>
 </p>
 
 <p align="center">
-  <a href="https://github.com/adeoluo/corpus-dedup-library/actions/workflows/ci.yml"><img alt="Continuous integration" src="https://github.com/adeoluo/corpus-dedup-library/actions/workflows/ci.yml/badge.svg"></a>
-  <img alt="Coverage" src="https://img.shields.io/badge/coverage-93%25-brightgreen">
+  <a href="https://github.com/adeoluo/corpus-dedup-library/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/adeoluo/corpus-dedup-library/actions/workflows/ci.yml/badge.svg"></a>
+  <a href="https://github.com/adeoluo/corpus-dedup-library/releases"><img alt="Release" src="https://img.shields.io/github/v/release/adeoluo/corpus-dedup-library"></a>
   <img alt="Python" src="https://img.shields.io/badge/python-3.11%20%7C%203.12-blue">
-  <img alt="Type checked" src="https://img.shields.io/badge/mypy-strict-blue">
-  <img alt="Runtime dependencies" src="https://img.shields.io/badge/runtime%20deps-0-brightgreen">
-  <img alt="License" src="https://img.shields.io/badge/license-MIT-green">
+  <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green"></a>
 </p>
 
 ---
@@ -21,7 +19,7 @@ The quality of a language model is bounded by the quality of its training data, 
 important cleaning steps are **near-deduplication** (removing documents that are near-copies of
 each other) and **quality filtering** (dropping degenerate text). Exact deduplication by comparing
 every pair is quadratic and misses near-copies that differ by an edit. This library implements the
-standard scalable approach from scratch, with **zero runtime dependencies**: **MinHash** estimates
+standard scalable approach from scratch: **MinHash** estimates
 Jaccard similarity cheaply, and **locality-sensitive hashing** shortlists only the pairs likely to
 be similar, so the work stays close to linear.
 
@@ -32,7 +30,7 @@ grows with corpus size.
 ## Architecture
 
 <p align="center">
-  <img src="docs/architecture/architecture.svg" alt="System architecture" width="900">
+  <img src="docs/architecture/architecture.svg" alt="Architecture diagram" width="860">
 </p>
 
 Each document is shingled into hashed word k-grams; MinHash reduces the shingle set to a compact
@@ -40,7 +38,7 @@ signature; LSH bands the signatures and buckets them so that similar documents c
 pairs are verified against a Jaccard threshold; and a union-find groups confirmed duplicates so one
 representative per cluster is kept. See the [ADRs](docs/adr/) for the key decisions.
 
-## What it implements
+### What it implements
 
 - **MinHash** with a deterministic 64-bit hash and a family of ``(a*h + b) mod p`` permutations, so
   signature agreement is an unbiased estimate of Jaccard similarity.
@@ -86,20 +84,23 @@ word-shingle MinHash (it measures lexical overlap, not meaning), not an implemen
 remain synthetic corpora: they measure throughput and memory behavior, not accuracy on real web text
 at pretraining scale.
 
-## Demonstration
+### Evaluation
 
-```text
-$ python -m corpus_dedup_library report
-Near-duplicate detection against ground truth:
-  precision=1.000, recall=1.000, f1=1.000; 52/4005 pairs compared (77x fewer)
+The labeled corpus and all hashing are deterministic, so every number reproduces offline. Full
+method and tables: [`docs/EVALUATION_REPORT.md`](docs/EVALUATION_REPORT.md).
 
-$ python -m corpus_dedup_library quality
-Quality filter over 93 documents:
-  kept 90, rejected 3
-  doc 90: too_few_words, too_few_stopwords
-  doc 91: too_few_stopwords, too_many_symbols
-  doc 92: too_repetitive
-```
+### Comparison scope
+
+The reported precision, recall, and candidate-pair reduction are measured on a small synthetic
+corpus (90 to 270 documents) with injected near-duplicates, against an exhaustive all-pairs
+baseline, not against an established deduplication pipeline at scale. Perfect accuracy on injected
+duplicates is not evidence of the same accuracy on diverse web text, and this corpus is far below
+pretraining scale. This project has **not** been benchmarked against
+[datatrove](https://github.com/huggingface/datatrove) or
+[text-dedup](https://github.com/ChenghaoMou/text-dedup), and it does not claim to beat them. What
+the result establishes is the correctness of the MinHash and LSH mechanics and the sublinear growth
+of candidate pairs. A large-scale evaluation with memory and throughput measurements is the natural
+next step.
 
 ## Quickstart
 
@@ -122,7 +123,24 @@ print(result.keep, result.drop)
 print(assess("!!! @@@ ###").reasons)  # ('too_few_stopwords', 'too_many_symbols')
 ```
 
-## HTTP service
+## Usage
+
+### Demonstration
+
+```text
+$ python -m corpus_dedup_library report
+Near-duplicate detection against ground truth:
+  precision=1.000, recall=1.000, f1=1.000; 52/4005 pairs compared (77x fewer)
+
+$ python -m corpus_dedup_library quality
+Quality filter over 93 documents:
+  kept 90, rejected 3
+  doc 90: too_few_words, too_few_stopwords
+  doc 91: too_few_stopwords, too_many_symbols
+  doc 92: too_repetitive
+```
+
+### HTTP service
 
 A standard-library HTTP service holds no corpus state; each request carries its own documents. The
 routing logic is a pure function, tested without a socket.
@@ -144,10 +162,26 @@ routing logic is a pure function, tested without a socket.
 - **A verification step after LSH** - LSH produces candidates, not decisions; verifying each against
   a threshold controls precision. See [ADR 0003](docs/adr/0003-verify-candidates.md).
 
-## Evaluation
+## Testing
 
-The labeled corpus and all hashing are deterministic, so every number reproduces offline. Full
-method and tables: [`docs/EVALUATION_REPORT.md`](docs/EVALUATION_REPORT.md).
+```bash
+make test                     # or: uv run pytest
+uv run pytest --cov=src --cov-report=term-missing --cov-fail-under=80
+```
+
+The suite in `tests/` uses deterministic hashing and synthetic corpora:
+
+- `test_dedup.py`: shingling, exact Jaccard bounds, MinHash estimates and determinism, LSH
+  candidate shortlisting and signature validation, near-duplicate removal (estimated and
+  exact modes agree), detection precision and recall, adversarial duplicate shapes, the
+  documented boundary that a low-overlap paraphrase is not detected, the scale report, and
+  the quality filters (natural prose accepted, degenerate text rejected, tunable config).
+- `test_service_cli.py`: the HTTP handler layer (`/health`, `/ready`, `/dedup`, `/quality`,
+  `/report`, `/metrics`, validation, unknown routes) and the CLI commands.
+
+CI (`.github/workflows/ci.yml`) runs `ruff format --check`, `ruff check`, `mypy src`, and
+`pytest` with an 80% coverage gate on Python 3.11 and 3.12, then builds the package and the
+Docker image.
 
 ## Responsible AI
 
@@ -155,22 +189,9 @@ method and tables: [`docs/EVALUATION_REPORT.md`](docs/EVALUATION_REPORT.md).
 - **Data card:** [`docs/DATA_CARD.md`](docs/DATA_CARD.md)
 - **Threat model:** [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md)
 
-## Comparison scope
-
-The reported precision, recall, and candidate-pair reduction are measured on a small synthetic
-corpus (90 to 270 documents) with injected near-duplicates, against an exhaustive all-pairs
-baseline, not against an established deduplication pipeline at scale. Perfect accuracy on injected
-duplicates is not evidence of the same accuracy on diverse web text, and this corpus is far below
-pretraining scale. This project has **not** been benchmarked against
-[datatrove](https://github.com/huggingface/datatrove) or
-[text-dedup](https://github.com/ChenghaoMou/text-dedup), and it does not claim to beat them. What
-the result establishes is the correctness of the MinHash and LSH mechanics and the sublinear growth
-of candidate pairs. A large-scale evaluation with memory and throughput measurements is the natural
-next step.
-
 ## Limitations
 
-- Pure-Python hashing is slow per document; the win is algorithmic (far fewer comparisons), not raw
+- Hashing in interpreted Python is slow per document; the win is algorithmic (far fewer comparisons), not raw
   speed. An optimized hash would lower absolute latency.
 - Bands, rows, and the threshold set the operating point; the defaults suit the bundled corpus and
   may need tuning for other similarity distributions.
@@ -186,4 +207,4 @@ next step.
 
 ## License
 
-[MIT](LICENSE)
+Released under the [MIT License](LICENSE).
