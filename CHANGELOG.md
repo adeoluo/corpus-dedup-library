@@ -4,6 +4,28 @@ All notable changes to this project are documented here. The file is generated
 from Conventional Commits by [git-cliff](https://git-cliff.org) when a release is cut
 with `make cut-release`.
 
+## [0.1.1] 2026-11-02
+
+### Features
+
+- Streaming CLI for large corpora, and C4 benchmarks against datasketch (#9)
+
+### Documentation
+
+- Recorded terminal demo of a real run, with its vhs tape
+- Install the corpus-dedup CLI with Homebrew (#5)
+- Remove authorship statements from docs and scripts
+- Recorded demos of more commands, with their vhs tapes (#7)
+- Recorded demos of the HTTP service and more commands (#8)
+
+### Build and CI
+
+- Build release archives for Linux and macOS on arm64 and amd64 (#6)
+
+### Maintenance
+
+- Classify squash merges in the changelog by the commits they contain
+
 ## [0.1.0] 2026-11-02
 
 ### Features
@@ -30,7 +52,3 @@ with `make cut-release`.
 - Initialize repository with license and overview
 - Remove Dependabot configuration
 - Add release automation, AGENTS.md, llms.txt and contributor docs
-
-### Bench
-
-- Add scale, throughput, memory, and adversarial duplicate tests (#3)
