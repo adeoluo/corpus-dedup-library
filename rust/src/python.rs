@@ -3,7 +3,7 @@
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
-use crate::{candidate_pairs as lsh_pairs, cluster as cluster_pairs, MinHasher};
+use crate::{candidate_pairs as lsh_pairs, cluster as cluster_pairs, cluster_exact, MinHasher};
 
 /// MinHash signatures for `texts`, computed in parallel with the GIL released.
 #[pyfunction]
@@ -44,11 +44,26 @@ fn cluster(
     (c.keep, c.drop, c.confirmed, c.clusters)
 }
 
+/// Like `cluster`, but confirms candidates by exact shingle Jaccard over `texts`.
+#[pyfunction]
+#[allow(clippy::type_complexity)]
+fn cluster_exact_jaccard(
+    py: Python<'_>,
+    texts: Vec<String>,
+    candidates: Vec<(usize, usize)>,
+    k: usize,
+    threshold: f64,
+) -> (Vec<usize>, Vec<usize>, Vec<(usize, usize)>, Vec<Vec<usize>>) {
+    let c = py.detach(|| cluster_exact(&texts, &candidates, k, threshold));
+    (c.keep, c.drop, c.confirmed, c.clusters)
+}
+
 #[pymodule]
 fn corpus_dedup_rs(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(signatures, m)?)?;
     m.add_function(wrap_pyfunction!(candidate_pairs, m)?)?;
     m.add_function(wrap_pyfunction!(cluster, m)?)?;
+    m.add_function(wrap_pyfunction!(cluster_exact_jaccard, m)?)?;
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     Ok(())
 }

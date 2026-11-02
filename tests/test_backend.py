@@ -22,5 +22,5 @@ def test_python_backend_is_always_available() -> None:
 def test_missing_extension(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(backend, "_EXTENSION", None)
     assert backend.resolve_backend("auto") == "python"
-    with pytest.raises(RuntimeError, match="not installed"):
+    with pytest.raises(RuntimeError, match="not built"):
         backend.resolve_backend("rust")

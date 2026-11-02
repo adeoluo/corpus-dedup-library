@@ -1,4 +1,4 @@
-"""Optional Rust backend, used when the ``corpus_dedup_rs`` extension is installed.
+"""The Rust backend, compiled into the package on install and used by default.
 
 The Rust core in ``rust/`` reproduces the Python MinHash, LSH banding, and clustering bit
 for bit, computes signatures in parallel, and releases the GIL. The Python implementation
@@ -15,10 +15,13 @@ BACKENDS: tuple[str, ...] = ("auto", "python", "rust")
 
 
 def _load_extension() -> Any:
-    try:
-        return importlib.import_module("corpus_dedup_rs")
-    except ImportError:
-        return None
+    # Inside the package for normal installs; top level for an older `maturin develop`.
+    for name in ("corpus_dedup_library.corpus_dedup_rs", "corpus_dedup_rs"):
+        try:
+            return importlib.import_module(name)
+        except ImportError:
+            continue
+    return None
 
 
 _EXTENSION: Any = _load_extension()
@@ -39,7 +42,8 @@ def resolve_backend(backend: str) -> Backend:
         return "rust" if rust_available() else "python"
     if backend == "rust" and not rust_available():
         raise RuntimeError(
-            "the Rust backend is not installed; run `make rust-develop` or use backend='python'"
+            "the Rust backend is not built; run `uv sync` or `make rust-develop`, "
+            "or use backend='python'"
         )
     return "rust" if backend == "rust" else "python"
 

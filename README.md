@@ -54,7 +54,8 @@ See the [ADRs](docs/adr/) for the key decisions.
   union-find clustering, and representative selection.
 - **A Rust core** (`rust/`): the same MinHash, LSH banding, and clustering, bit-exact with the
   Python reference, computing signatures in parallel with the GIL released. It is exposed to
-  Python as an optional backend and as a standalone `corpus-dedup` command for JSONL streams.
+  Python as the default backend (compiled into the package on install) and as a standalone
+  `corpus-dedup` command for JSONL streams. The Python implementation is the reference.
 - **Heuristic quality filters**: length, mean word length, stop-word ratio, symbol ratio, and word
   repetition, each an inspectable rule.
 
@@ -116,21 +117,25 @@ measured against the 4,082 truly similar pairs that any of the runs found.
 
 | Library | Time | Documents per second | Pairs reported | Precision | Recall |
 |---|---:|---:|---:|---:|---:|
-| corpus-dedup-library (Rust backend) | 0.9 s | 52,663 | 3,824 | 0.876 | 0.821 |
-| **corpus-dedup-library (Rust backend, exact=True)** | 2.3 s | 21,676 | 4,044 | 1.000 | 0.991 |
-| datasketch MinHashLSH | 14.8 s | 3,383 | 2,662 | 0.974 | 0.635 |
+| corpus-dedup-library (Rust backend) | 6.0 s | 8,342 | 3,824 | 0.876 | 0.821 |
+| **corpus-dedup-library (Rust backend, exact=True)** | **5.2 s** | 9,528 | 4,044 | **1.000** | **0.991** |
+| datasketch MinHashLSH | 71.1 s | 703 | 2,662 | 0.974 | 0.635 |
 
-The default mode confirms candidates with the MinHash estimate, which is fastest but lets
-some false pairs through (precision 0.876). `exact=True` confirms each candidate with the
-exact Jaccard similarity: **precision 1.000 and recall 0.991, 6x faster than datasketch**,
-which reports fewer pairs (higher precision than the estimate mode, but recall 0.635 because
-its banding is tuned more conservatively). On 10,000 documents the
-Rust backend is 215x faster than this library's own Python
-backend.
+These timings were taken with other applications loading the machine, so all three rows are
+several times slower than on an idle M1 (an earlier idle run took 0.9 s for the default mode and
+14.8 s for datasketch). The ratios between rows are what this table measures.
+
+The default mode confirms candidates with the MinHash estimate and lets some false pairs through
+(precision 0.876). `exact=True` confirms each candidate with the exact Jaccard similarity of the
+two documents' shingle sets, now computed in Rust in parallel, so it costs no more time than the
+estimate: **precision 1.000 and recall 0.991, 13.7x faster than datasketch**, which reports fewer
+pairs (higher precision than the estimate mode, but recall 0.635 because its banding is tuned more
+conservatively). On 10,000 documents the Rust backend is 144x faster than this library's own
+Python backend in the same loaded run (215x on the idle machine).
 
 ### Rust core
 
-> Reproduce with `make rust-develop bench-compare`. Synthetic corpora of 80 to 200 word documents
+> Reproduce with `make bench-compare`. Synthetic corpora of 80 to 200 word documents
 > with one planted near-copy per five documents; default settings (16 bands of 4 rows, k=2,
 > threshold 0.6); Apple M1, 8 cores.
 
@@ -166,7 +171,7 @@ next step.
 
 ```bash
 git clone https://github.com/adeoluo/corpus-dedup-library.git && cd corpus-dedup-library
-make setup                      # install dev tooling + pre-commit hooks
+make setup                      # install (compiles the Rust core; needs a Rust toolchain) + hooks
 make all                        # lint + type-check + test
 
 python -m corpus_dedup_library report      # detection precision and recall
@@ -208,14 +213,15 @@ Quality filter over 93 documents:
 
 ### Rust backend and CLI
 
-```bash
-make rust-develop                      # build the extension into .venv (needs a Rust toolchain)
-```
+Installing the package compiles the Rust core into it, and `deduplicate` uses it by default.
+After editing `rust/`, `make rust-develop` rebuilds it in place.
 
 ```python
 from corpus_dedup_library.dedup import deduplicate
 
-result = deduplicate(documents, backend="auto")  # "rust" when installed, else "python"
+result = deduplicate(documents)  # Rust core (backend="auto")
+exact = deduplicate(documents, exact=True)  # exact Jaccard check, also in Rust
+reference = deduplicate(documents, backend="python")  # identical result, readable reference
 ```
 
 The same core ships as a command that streams JSONL, keeps the first line of each
@@ -307,9 +313,10 @@ required.
 
 ## Limitations
 
-- The Python backend hashes at roughly 280 documents per second; use the Rust backend for
-  volume. Both hold all signatures in memory, so corpus size is bounded by RAM.
-- The `exact` verification mode uses Rust signatures but verifies candidates in Python.
+- Installing from source compiles the Rust core, so it needs a Rust toolchain.
+- The library holds all signatures in memory, so corpus size is bounded by RAM (the command-line
+  tool's `--input` mode keeps only signatures and offsets). The Python reference backend hashes
+  at roughly 280 documents per second.
 - Bands, rows, and the threshold set the operating point; the defaults suit the bundled corpus and
   may need tuning for other similarity distributions.
 - The quality filters are heuristic and language-agnostic by design; a production pipeline would add
