@@ -1,4 +1,4 @@
-"""A dependency-free HTTP service for near-deduplication and quality filtering.
+"""A standard-library HTTP service for near-deduplication and quality filtering.
 
 The service holds no corpus state; each request carries its own documents. It
 deduplicates a batch, assesses one document's quality, and reports detection

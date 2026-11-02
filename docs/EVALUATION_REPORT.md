@@ -38,7 +38,7 @@ thresholds are configurable.
 
 ## Service performance
 
-Each `/dedup` request rebuilds signatures for its batch, so throughput reflects pure-Python hashing;
+Each `/dedup` request rebuilds signatures for its batch, so throughput reflects interpreted Python hashing;
 a small-batch stress benchmark sustains tens of requests per second with p50 near 30 ms. The
 algorithmic win is in the number of pairwise comparisons avoided, not in the speed of each hash.
 

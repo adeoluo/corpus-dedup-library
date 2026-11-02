@@ -5,7 +5,7 @@ exactly for every pair. MinHash estimates it cheaply: each of ``num_perm`` hash
 functions maps the shingle set to its minimum hash value, and the fraction of hash
 functions where two signatures agree is an unbiased estimate of their Jaccard
 similarity. Hashing uses a fixed 64-bit mix and a family of ``(a*h + b) mod p``
-permutations, so everything is deterministic and dependency-free.
+permutations, so everything is deterministic and reproducible across runs.
 """
 
 from __future__ import annotations
