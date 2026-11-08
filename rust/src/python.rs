@@ -3,7 +3,7 @@
 use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
-use crate::{candidate_pairs as lsh_pairs, cluster as cluster_pairs, cluster_exact, MinHasher};
+use crate::{MinHasher, candidate_pairs as lsh_pairs, cluster as cluster_pairs, cluster_exact};
 
 /// MinHash signatures for `texts`, computed in parallel with the GIL released.
 #[pyfunction]
