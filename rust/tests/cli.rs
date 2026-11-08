@@ -43,9 +43,11 @@ fn custom_field_and_errors() {
     assert!(out.status.success());
     let missing = run(&[], "{\"body\": \"x\"}\n");
     assert_eq!(missing.status.code(), Some(2));
-    assert!(String::from_utf8(missing.stderr)
-        .unwrap()
-        .contains("missing string field"));
+    assert!(
+        String::from_utf8(missing.stderr)
+            .unwrap()
+            .contains("missing string field")
+    );
     let invalid = run(&[], "not json\n");
     assert_eq!(invalid.status.code(), Some(2));
     let bad_threshold = run(&["--threshold", "1.5"], "");

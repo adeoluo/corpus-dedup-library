@@ -15,7 +15,7 @@ use std::io::{self, BufRead, BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 use std::process::ExitCode;
 use std::time::Instant;
 
-use corpus_dedup_rs::{candidate_pairs, cluster, MinHasher};
+use corpus_dedup_rs::{MinHasher, candidate_pairs, cluster};
 
 const BATCH: usize = 20_000;
 
