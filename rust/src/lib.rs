@@ -13,6 +13,6 @@ pub mod minhash;
 #[cfg(feature = "python")]
 mod python;
 
-pub use cluster::{cluster, cluster_exact, Clusters};
+pub use cluster::{Clusters, cluster, cluster_exact};
 pub use lsh::candidate_pairs;
-pub use minhash::{hash_token, shingles, MinHasher};
+pub use minhash::{MinHasher, hash_token, shingles};

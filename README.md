@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/adeoluo/corpus-dedup-library/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/adeoluo/corpus-dedup-library/actions/workflows/ci.yml/badge.svg"></a>
   <a href="https://github.com/adeoluo/corpus-dedup-library/releases"><img alt="Release" src="https://img.shields.io/github/v/release/adeoluo/corpus-dedup-library"></a>
-  <img alt="Python" src="https://img.shields.io/badge/python-3.11%20%7C%203.12-blue">
+  <img alt="Python" src="https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14%20%7C%203.15-blue">
   <img alt="Rust" src="https://img.shields.io/badge/rust-core%20%2B%20CLI-B7410E">
   <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-green"></a>
 </p>
@@ -300,7 +300,7 @@ The suite in `tests/` uses deterministic hashing and synthetic corpora:
   `/report`, `/metrics`, validation, unknown routes) and the CLI commands.
 
 CI (`.github/workflows/ci.yml`) runs `ruff format --check`, `ruff check`, `mypy src`, and
-`pytest` with an 80% coverage gate on Python 3.11 and 3.12, then builds the package and the
+`pytest` with an 80% coverage gate on Python 3.12, 3.13, 3.14 and 3.15, then builds the package and the
 Docker image. A separate job runs `cargo fmt`, `clippy` (with and without the Python feature),
 `cargo test`, builds the extension with maturin, and runs the parity tests with the extension
 required.
