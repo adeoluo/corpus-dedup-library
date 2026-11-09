@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The file is generated
 from Conventional Commits by [git-cliff](https://git-cliff.org) when a release is cut
 with `make cut-release`.
 
+## [0.3.2] 2026-11-09
+
+### Bug fixes
+
+- The Rust core and nested packages report the release version (#18)
+
+### Documentation
+
+- Diagrams on white in the shared theme, make diagram for every diagram, and a self-contained Definition of Done (#15)
+- Plainer wording in the ADR (#17)
+
+### Build and CI
+
+- Build Linux and macOS wheels with the Rust core and the sdist for every release (#16)
+
 ## [0.3.1] 2026-11-08
 
 ### Bug fixes
