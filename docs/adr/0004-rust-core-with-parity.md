@@ -30,7 +30,7 @@ Port shingling, MinHash, LSH banding, and union-find clustering to a Rust crate 
 * About 150 to 175 times faster end to end on synthetic corpora, with identical results.
 * Two implementations must stay in step. `tests/test_rust_parity.py` compares them in CI
   with the extension required, so any divergence fails the build.
-* Installing the Rust backend needs a Rust toolchain; the pure Python install is unchanged.
+* Installing the Rust backend needs a Rust toolchain; the Python-only install is unchanged.
 
 ## Update: the Rust core is the default, including exact verification
 
