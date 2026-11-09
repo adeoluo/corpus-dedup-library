@@ -14,7 +14,7 @@ from corpus_dedup_library.minhash import (
 )
 from corpus_dedup_library.quality import QualityConfig, QualityReport, assess, filter_corpus
 
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 
 __all__ = [
     "Corpus",

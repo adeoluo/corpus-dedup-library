@@ -1,6 +1,6 @@
 [package]
 name = "corpus-dedup-rs"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2024"
 description = "Rust core of corpus-dedup-library: MinHash signatures, LSH banding, and clustering, bit-exact with the Python implementation"
 license = "MIT"
