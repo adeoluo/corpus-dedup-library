@@ -38,9 +38,10 @@ thresholds are configurable.
 
 ## Service performance
 
-Each `/dedup` request rebuilds signatures for its batch, so throughput reflects interpreted Python hashing;
-a small-batch stress benchmark sustains tens of requests per second with p50 near 30 ms. The
-algorithmic win is in the number of pairwise comparisons avoided, not in the speed of each hash.
+Each `/dedup` request rebuilds signatures for its batch. On the default Rust backend the small-batch
+stress benchmark (`uv run python benchmarks/stress.py`, 1,000 requests of 12 documents, 8 workers)
+sustains about 11,000 requests per second with p50 near 0.6 ms on an Apple M1; on the Python
+reference backend it sustained tens of requests per second with p50 near 30 ms.
 
 ## Reproducibility
 

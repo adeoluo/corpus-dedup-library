@@ -78,7 +78,8 @@ See the [ADRs](docs/adr/) for the key decisions.
 
 ## Results
 
-> Reproduce with `python -m corpus_dedup_library report`. A labeled corpus injects known
+> Reproduce with `uv run python benchmarks/benchmark.py` (`python -m corpus_dedup_library report`
+> prints the first row). A labeled corpus injects known
 > near-duplicates (exact copies, an appended clause, a changed word) so detection can be scored.
 
 | Corpus size | Precision | Recall | Pairs compared | Fewer than all-pairs |
@@ -93,16 +94,20 @@ quadratic all-pairs count, the reduction **grows with corpus size**, from 77x at
 
 ### Scale, throughput, and memory
 
-> Reproduce with `python -m corpus_dedup_library` then `uv run python benchmarks/scale.py`.
+> Reproduce with `uv run python benchmarks/scale.py`, which uses the default Rust backend.
 > Synthetic corpora (two thirds unique, one third near-copies). Peak memory is measured with
-> `tracemalloc`.
+> `tracemalloc`, so it counts the Python-side allocations and not memory held by the Rust core.
 
 | Documents | Runtime | Throughput | Peak memory | Candidate pairs | Fewer than all-pairs | Precision | Recall |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| 1,050 | 3.6 s | ~288 docs/s | 8.1 MiB | 442 | 1,246x | 1.000 | 0.997 |
-| 3,000 | 10.5 s | ~285 docs/s | 22.9 MiB | 1,310 | 3,434x | 1.000 | 0.988 |
-| 6,000 | 21.1 s | ~284 docs/s | 45.7 MiB | 2,634 | 6,833x | 1.000 | 0.992 |
-| 10,500 | 37.5 s | ~280 docs/s | 80.4 MiB | 4,900 | 11,249x | 1.000 | 0.995 |
+| 1,050 | 0.03 s | ~35,000 docs/s | 2.8 MiB | 442 | 1,246x | 1.000 | 0.997 |
+| 3,000 | 0.08 s | ~36,800 docs/s | 8.0 MiB | 1,310 | 3,434x | 1.000 | 0.988 |
+| 6,000 | 0.17 s | ~36,300 docs/s | 16.1 MiB | 2,634 | 6,833x | 1.000 | 0.992 |
+| 10,500 | 0.27 s | ~38,300 docs/s | 28.3 MiB | 4,900 | 11,249x | 1.000 | 0.995 |
+
+An earlier version of this table was measured on the Python reference backend, before Rust
+became the default (about 285 documents per second and 80 MiB at 10,500 documents); the
+candidate-pair, precision and recall columns are the same on both backends.
 
 Throughput holds roughly constant per document and memory grows linearly with corpus size, while
 the candidate-pair reduction keeps widening (over 11,000x at 10,500 documents). Adversarial duplicate
