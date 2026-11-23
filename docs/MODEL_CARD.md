@@ -12,7 +12,8 @@
 - **Primary users:** engineers building training-data pipelines.
 
 ## Out-of-scope / prohibited use
-- Not an optimized production deduplicator; hashing in interpreted Python is slow per document.
+- Not hardened as a production deduplicator. The Python reference backend is slow per document; the
+  default Rust core is not, but it has only been run on one machine.
 - The quality filters are heuristic and language-agnostic; they do not replace model-based filters.
 
 ## Performance
