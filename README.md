@@ -16,6 +16,21 @@
 
 > **Evidence level: publicly benchmarked.** 1.4 million C4 documents, bit-exact parity between the Rust core and the Python reference, and a head-to-head with datasketch. Not independently reproduced and not used in production. [What the levels mean](https://github.com/adeoluo#evidence-levels).
 
+## In plain English
+
+AI models learn from huge piles of text. Copies in that pile waste training time and skew
+the model. This tool finds and removes near-copies quickly.
+
+- **1.4 million web pages cleaned in 30.5 seconds.** That is 3.3 GB of real text on a
+  laptop, using 1.2 GB of memory. It removed 48,572 near-copies (3.4%).
+- **13.7x faster than datasketch,** the most used Python library for this, while finding more
+  of the true copies (99.1% against 63.5%) with no wrong matches.
+- **The fast version gives exactly the same answers as the simple one.** The Rust core and
+  the readable Python version agree bit for bit.
+
+**Where it falls short:** it compares wording, so a copy rewritten in different words is not
+caught. Timings come from one laptop.
+
 ## Motivation
 
 The quality of a language model is bounded by the quality of its training data, and two of the most
