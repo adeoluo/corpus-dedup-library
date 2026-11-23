@@ -225,11 +225,10 @@ reference = deduplicate(documents, backend="python")  # identical result, readab
 ```
 
 The same core ships as a command that streams JSONL, keeps the first line of each
-near-duplicate cluster in input order, and writes a summary to stderr. Install it with
-Homebrew (built from the tagged source) or build it from this repository:
+near-duplicate cluster in input order, and writes a summary to stderr. Install a prebuilt
+binary from the GitHub release or build it from this repository:
 
 ```text
-$ brew install adeoluo/tap/corpus-dedup
 $ curl -fsSL https://raw.githubusercontent.com/adeoluo/corpus-dedup-library/main/scripts/install.sh | sh   # prebuilt, checksum verified
 $ corpus-dedup --threshold 0.6 < corpus.jsonl > deduped.jsonl
 documents=2400 kept=2000 dropped=400 clusters=400 candidate_pairs=400 seconds=0.030
