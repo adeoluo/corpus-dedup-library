@@ -16,7 +16,7 @@
 
 > **Evidence level: publicly benchmarked.** 1.4 million C4 documents, bit-exact parity between the Rust core and the Python reference, and a head-to-head with datasketch. Not independently reproduced and not used in production. [What the levels mean](https://github.com/adeoluo#evidence-levels).
 
-## Summary
+## Highlights
 
 AI models learn from huge piles of text. Copies in that pile waste training time and skew
 the model. This tool finds and removes near-copies quickly.
