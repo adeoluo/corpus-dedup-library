@@ -14,6 +14,8 @@
 
 ---
 
+> **Evidence level: publicly benchmarked.** 1.4 million C4 documents, bit-exact parity between the Rust core and the Python reference, and a head-to-head with datasketch. Not independently reproduced and not used in production. [What the levels mean](https://github.com/adeoluo#evidence-levels).
+
 ## Motivation
 
 The quality of a language model is bounded by the quality of its training data, and two of the most
