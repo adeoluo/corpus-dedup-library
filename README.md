@@ -14,7 +14,7 @@
 
 ---
 
-> **Evidence level: publicly benchmarked.** The library was run on 1.4 million documents from C4 (the Colossal Clean Crawled Corpus, a public collection of English web pages). Tests check that the Rust core gives bit-exact results compared with the Python reference version. It was also compared directly with datasketch, a popular Python library for the same task. The results have not been independently reproduced, and the library is not used in production. [What the levels mean](https://github.com/adeoluo#evidence-levels).
+> **Evidence level: publicly benchmarked.** The library was run on 1.4 million documents from C4 (the Colossal Clean Crawled Corpus, a public collection of English web pages). Tests check that the Rust core gives bit-exact results compared with the Python reference version. It was also compared directly with datasketch, a popular Python library for the same task. The results have not been independently reproduced, and the library is not used in production.
 
 ## Highlights
 
